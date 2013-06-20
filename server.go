@@ -150,8 +150,8 @@ func parseStorageLine(line []byte, item *Item) {
 	copy(item.Key, pieces[0])
 
 	// lol, no error handling here
-	item.Flags, _ = strconv.ParseInt(string(pieces[1]), 10, 32)
-	exptime, _ := strconv.ParseInt(string(pieces[2]), 10, 32)
+	item.Flags, _ = strconv.Atoi(string(pieces[1]))
+	exptime, _ := strconv.ParseInt(string(pieces[2]), 10, 64)
 	item.SetExpires(exptime)
-	item.Length, _ = strconv.ParseInt(string(pieces[3]), 10, 32)
+	item.Length, _ = strconv.Atoi(string(pieces[3]))
 }
