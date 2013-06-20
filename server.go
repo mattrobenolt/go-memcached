@@ -19,15 +19,9 @@ type conn struct {
 	rwc *bufio.ReadWriter
 }
 
-type storagecommand struct {
-	key string
-	flags int64
-	exptime int64
-}
-
 type Server struct {
 	Addr string
-	GetHandler func(string) (*Item, error)
+	GetHandler func([]byte) (*Item, error)
 	SetHandler func(*Item) error
 }
 
@@ -92,14 +86,14 @@ func (c *conn) handleRequest() error {
 	}
 	switch line[0] {
 	case 'g':
-		key := string(line[4:])
+		key := line[4:]
 		item, err := c.server.GetHandler(key)
 		if err != nil {
 			c.end(StatusEnd)
 		} else {
 			fmt.Fprintf(c.rwc, StatusValue, item.Key, item.Flags, item.Length)
 			c.rwc.Write(crlf)
-			io.WriteString(c.rwc, item.Value)
+			c.rwc.Write(item.Value)
 			c.rwc.Write(crlf)
 			c.end(StatusEnd)
 		}
@@ -113,7 +107,11 @@ func (c *conn) handleRequest() error {
 		if err != nil {
 			return ClientError
 		}
-		item.Value = string(value)
+
+		// Copy the value into the *Item
+		item.Value = make([]byte, len(value))
+		copy(item.Value, value)
+
 		err = c.server.SetHandler(item)
 		if err != nil {
 			c.end(StatusNotStored)
@@ -144,7 +142,8 @@ func ListenAndServe(addr string) error {
 
 func parseStorageLine(line []byte, item *Item) {
 	pieces := bytes.Fields(line[4:])  // Skip the actual "set "
-	item.Key = string(pieces[0])
+	item.Key = make([]byte, len(pieces[0]))
+	copy(item.Key, pieces[0])
 
 	// lol, no error handling here
 	item.Flags, _ = strconv.ParseInt(string(pieces[1]), 10, 32)
