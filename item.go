@@ -18,7 +18,7 @@ func (i *Item) IsExpired() bool {
 
 func (i *Item) SetExpires(exptime int64) {
 	if exptime > MAX_EXPTIME {
-		i.Expires = time.Unix(int64(exptime), 0)
+		i.Expires = time.Unix(exptime, 0)
 	} else if exptime > 0 {
 		i.Expires = time.Now().Add(time.Duration(exptime)*time.Second)
 	}
