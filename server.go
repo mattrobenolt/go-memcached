@@ -35,7 +35,7 @@ func (s *Server) newConn(rwc net.Conn) (c *conn, err error) {
 	c = new(conn)
 	c.server = s
 	c.conn = rwc
-	c.rwc = bufio.NewReadWriter(bufio.NewReader(rwc), bufio.NewWriter(rwc))
+	c.rwc = bufio.NewReadWriter(bufio.NewReaderSize(rwc, 1048576), bufio.NewWriter(rwc))
 	return c, nil
 }
 
@@ -87,7 +87,7 @@ func (c *conn) end(s string) {
 
 func (c *conn) handleRequest() error {
 	line, err := c.ReadLine()
-	if err != nil {
+	if err != nil || len(line) == 0 {
 		return err
 	}
 	switch line[0] {
