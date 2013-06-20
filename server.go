@@ -155,3 +155,7 @@ func parseStorageLine(line []byte, item *Item) {
 	item.SetExpires(exptime)
 	item.Length, _ = strconv.Atoi(string(pieces[3]))
 }
+
+func NewServer(listen string, handler RequestHandler) *Server {
+	return &Server{listen, handler}
+}
