@@ -21,8 +21,7 @@ type conn struct {
 
 type Server struct {
 	Addr string
-	GetHandler func([]byte) (*Item, error)
-	SetHandler func(*Item) error
+	Handler RequestHandler
 }
 
 func (s *Server) newConn(rwc net.Conn) (c *conn, err error) {
@@ -87,7 +86,11 @@ func (c *conn) handleRequest() error {
 	switch line[0] {
 	case 'g':
 		key := line[4:]
-		item, err := c.server.GetHandler(key)
+		getter, ok := c.server.Handler.(Getter)
+		if !ok {
+			return ClientError
+		}
+		item, err := getter.Get(key)
 		if err != nil {
 			c.end(StatusEnd)
 		} else {
@@ -98,7 +101,8 @@ func (c *conn) handleRequest() error {
 			c.end(StatusEnd)
 		}
 	case 's':
-		if c.server.SetHandler == nil {
+		setter, ok := c.server.Handler.(Setter)
+		if !ok {
 			return ClientError
 		}
 		item := &Item{}
@@ -112,7 +116,7 @@ func (c *conn) handleRequest() error {
 		item.Value = make([]byte, len(value))
 		copy(item.Value, value)
 
-		err = c.server.SetHandler(item)
+		err = setter.Set(item)
 		if err != nil {
 			c.end(StatusNotStored)
 		} else {
