@@ -5,7 +5,7 @@ import "errors"
 const (
 	StatusEnd = "END"
 	StatusError = "ERROR"
-	StatusServerError = "SERVER_ERROR %s"
+	StatusServerError = "SERVER_ERROR"
 	StatusClientError = "CLIENT_ERROR %s"
 	StatusStored = "STORED"
 	StatusNotStored = "NOT_STORED"
@@ -21,4 +21,6 @@ const (
 var (
 	ClientError = errors.New(StatusClientError)
 	NotFound = errors.New(StatusNotFound)
+	ServerError = errors.New(StatusServerError)
+	Error = errors.New(StatusError)
 )

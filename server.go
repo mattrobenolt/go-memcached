@@ -85,10 +85,10 @@ func (c *conn) handleRequest() error {
 	}
 	switch line[0] {
 	case 'g':
-		key := line[4:]
+		key := line[4:] // get
 		getter, ok := c.server.Handler.(Getter)
 		if !ok {
-			return ClientError
+			return Error
 		}
 		item, err := getter.Get(key)
 		if err != nil {
@@ -101,26 +101,44 @@ func (c *conn) handleRequest() error {
 			c.end(StatusEnd)
 		}
 	case 's':
-		setter, ok := c.server.Handler.(Setter)
+		switch line[1] {
+		case 'e':
+			setter, ok := c.server.Handler.(Setter)
+			if !ok {
+				return Error
+			}
+			item := &Item{}
+			parseStorageLine(line, item)
+			value, err := c.ReadLine()
+			if err != nil {
+				return ClientError
+			}
+
+			// Copy the value into the *Item
+			item.Value = make([]byte, len(value))
+			copy(item.Value, value)
+
+			err = setter.Set(item)
+			if err != nil {
+				c.end(StatusNotStored)
+			} else {
+				c.end(StatusStored)
+			}
+		case 't':
+			// stat
+			return Error
+		}
+	case 'd':
+		key := line[7:] // delete
+		deleter, ok := c.server.Handler.(Deleter)
 		if !ok {
-			return ClientError
+			return Error
 		}
-		item := &Item{}
-		parseStorageLine(line, item)
-		value, err := c.ReadLine()
+		err := deleter.Delete(key)
 		if err != nil {
-			return ClientError
-		}
-
-		// Copy the value into the *Item
-		item.Value = make([]byte, len(value))
-		copy(item.Value, value)
-
-		err = setter.Set(item)
-		if err != nil {
-			c.end(StatusNotStored)
+			c.end(StatusNotFound)
 		} else {
-			c.end(StatusStored)
+			c.end(StatusDeleted)
 		}
 	default:
 		return ClientError

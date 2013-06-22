@@ -11,3 +11,8 @@ type Setter interface {
 	RequestHandler
 	Set(*Item) error
 }
+
+type Deleter interface {
+    RequestHandler
+    Delete([]byte) error
+}
