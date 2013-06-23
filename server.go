@@ -9,6 +9,8 @@ import (
 	"fmt"
 )
 
+const VERSION = "0.0.0"
+
 var (
 	crlf = []byte("\r\n")
 )
@@ -22,6 +24,7 @@ type conn struct {
 type Server struct {
 	Addr string
 	Handler RequestHandler
+	Stats Stats
 }
 
 func (s *Server) newConn(rwc net.Conn) (c *conn, err error) {
@@ -60,14 +63,19 @@ func (s *Server) Serve(l net.Listener) error {
 }
 
 func (c *conn) serve() {
-	defer c.Close()
+	defer func() {
+		c.server.Stats["curr_connections"].(*CounterStat).Decrement(1)
+		c.Close()
+	}()
+	c.server.Stats["total_connections"].(*CounterStat).Increment(1)
+	c.server.Stats["curr_connections"].(*CounterStat).Increment(1)
 	for {
 		err := c.handleRequest()
 		if err != nil {
 			if err == io.EOF {
 				return
 			}
-			c.end(fmt.Sprintf(err.Error(), "Unsupported"))
+			c.end(err.Error())
 		}
 	}
 }
@@ -81,7 +89,7 @@ func (c *conn) end(s string) {
 func (c *conn) handleRequest() error {
 	line, err := c.ReadLine()
 	if err != nil || len(line) == 0 {
-		return err
+		return io.EOF
 	}
 	switch line[0] {
 	case 'g':
@@ -90,10 +98,13 @@ func (c *conn) handleRequest() error {
 		if !ok {
 			return Error
 		}
+		c.server.Stats["cmd_get"].(*CounterStat).Increment(1)
 		item, err := getter.Get(key)
 		if err != nil {
+			c.server.Stats["get_misses"].(*CounterStat).Increment(1)
 			c.end(StatusEnd)
 		} else {
+			c.server.Stats["get_hits"].(*CounterStat).Increment(1)
 			fmt.Fprintf(c.rwc, StatusValue, item.Key, item.Flags, item.Length)
 			c.rwc.Write(crlf)
 			c.rwc.Write(item.Value)
@@ -118,6 +129,7 @@ func (c *conn) handleRequest() error {
 			item.Value = make([]byte, len(value))
 			copy(item.Value, value)
 
+			c.server.Stats["cmd_set"].(*CounterStat).Increment(1)
 			err = setter.Set(item)
 			if err != nil {
 				c.end(StatusNotStored)
@@ -125,8 +137,11 @@ func (c *conn) handleRequest() error {
 				c.end(StatusStored)
 			}
 		case 't':
-			// stat
-			return Error
+			for key, value := range c.server.Stats {
+				fmt.Fprintf(c.rwc, "STAT %s %s", key, value)
+				c.rwc.Write(crlf)
+			}
+			c.end(StatusEnd)
 		}
 	case 'd':
 		key := line[7:] // delete
@@ -141,7 +156,7 @@ func (c *conn) handleRequest() error {
 			c.end(StatusDeleted)
 		}
 	default:
-		return ClientError
+		return Error
 	}
 	return nil
 }
@@ -175,5 +190,5 @@ func parseStorageLine(line []byte, item *Item) {
 }
 
 func NewServer(listen string, handler RequestHandler) *Server {
-	return &Server{listen, handler}
+	return &Server{listen, handler, NewStats()}
 }
