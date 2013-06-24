@@ -138,7 +138,7 @@ func (c *conn) handleRequest() error {
 			}
 		case 't':
 			for key, value := range c.server.Stats {
-				fmt.Fprintf(c.rwc, "STAT %s %s", key, value)
+				fmt.Fprintf(c.rwc, StatusStat, key, value)
 				c.rwc.Write(crlf)
 			}
 			c.end(StatusEnd)

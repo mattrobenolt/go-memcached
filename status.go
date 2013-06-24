@@ -16,6 +16,7 @@ const (
 	StatusOK = "OK"
 	StatusVersion = "VERSION %s"
 	StatusValue = "VALUE %s %d %d"
+	StatusStat = "STAT %s %s"
 )
 
 var (
