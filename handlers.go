@@ -13,6 +13,6 @@ type Setter interface {
 }
 
 type Deleter interface {
-    RequestHandler
-    Delete([]byte) error
+	RequestHandler
+	Delete([]byte) error
 }

@@ -7,6 +7,7 @@ const MAX_EXPTIME = 60*60*24*30  // 30 days
 type Item struct {
 	Key []byte
 	Flags, Length int
+	Ttl int
 	Expires time.Time
 	Value []byte
 }
@@ -18,7 +19,14 @@ func (i *Item) IsExpired() bool {
 func (i *Item) SetExpires(exptime int64) {
 	if exptime > MAX_EXPTIME {
 		i.Expires = time.Unix(exptime, 0)
+		i.Ttl = int(i.Expires.Sub(time.Now()).Seconds())
 	} else if exptime > 0 {
+		i.Ttl = int(exptime)
 		i.Expires = time.Now().Add(time.Duration(exptime)*time.Second)
 	}
+}
+
+func (i *Item) SetValue(value []byte) {
+	i.Value = value
+	i.Length = len(value)
 }
