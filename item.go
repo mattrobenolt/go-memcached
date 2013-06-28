@@ -5,11 +5,9 @@ import "time"
 const MAX_EXPTIME = 60*60*24*30  // 30 days
 
 type Item struct {
-	Key []byte
-	Flags, Length int
-	Ttl int
+	Key, Value []byte
+	Length, Flags, Ttl int
 	Expires time.Time
-	Value []byte
 }
 
 func (i *Item) IsExpired() bool {
