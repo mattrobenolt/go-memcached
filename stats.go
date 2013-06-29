@@ -64,6 +64,7 @@ func (c *CounterStat) work() {
 
 func NewCounterStat() *CounterStat {
 	c := &CounterStat{}
+	c.calculations = make(chan int, 100)
 	go c.work()
 	return c
 }
