@@ -37,10 +37,11 @@ func (f *FuncStat) String() string {
 
 type CounterStat struct {
 	Count int
+	calculations chan int
 }
 
 func (c *CounterStat) Increment(num int) {
-	c.Count = c.Count + num
+	c.calculations <- num
 }
 
 func (c *CounterStat) SetCount(num int) {
@@ -48,11 +49,23 @@ func (c *CounterStat) SetCount(num int) {
 }
 
 func (c *CounterStat) Decrement(num int) {
-	c.Count = c.Count - num
+	c.calculations <- -num
 }
 
 func (c *CounterStat) String() string {
 	return strconv.Itoa(c.Count)
+}
+
+func (c *CounterStat) work() {
+	for num := range c.calculations {
+		c.Count = c.Count + num
+	}
+}
+
+func NewCounterStat() *CounterStat {
+	c := &CounterStat{}
+	go c.work()
+	return c
 }
 
 func NewStats() Stats {
@@ -63,12 +76,12 @@ func NewStats() Stats {
 	s["version"] = &StaticStat{VERSION}
 	s["golang"] = &StaticStat{runtime.Version()}
 	s["goroutines"] = &FuncStat{func() string { return strconv.Itoa(runtime.NumGoroutine()) }}
-	s["cmd_get"] = &CounterStat{}
-	s["cmd_set"] = &CounterStat{}
-	s["get_hits"] = &CounterStat{}
-	s["get_misses"] = &CounterStat{}
-	s["curr_connections"] = &CounterStat{}
-	s["total_connections"] = &CounterStat{}
-	s["evictions"] = &CounterStat{}
+	s["cmd_get"] = NewCounterStat()
+	s["cmd_set"] = NewCounterStat()
+	s["get_hits"] = NewCounterStat()
+	s["get_misses"] = NewCounterStat()
+	s["curr_connections"] = NewCounterStat()
+	s["total_connections"] = NewCounterStat()
+	s["evictions"] = NewCounterStat()
 	return s
 }
