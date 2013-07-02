@@ -8,7 +8,8 @@ import (
 const MAX_EXPTIME = 60*60*24*30  // 30 days
 
 type Item struct {
-	Key, Value []byte
+	Key string
+	Value []byte
 	Flags, Ttl int
 	Expires time.Time
 }

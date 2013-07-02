@@ -4,7 +4,7 @@ type RequestHandler interface{}
 
 type Getter interface {
 	RequestHandler
-	Get([]byte) (*Item, error)
+	Get(string) (*Item, error)
 }
 
 type Setter interface {
@@ -14,5 +14,5 @@ type Setter interface {
 
 type Deleter interface {
 	RequestHandler
-	Delete([]byte) error
+	Delete(string) error
 }

@@ -93,7 +93,7 @@ func (c *conn) handleRequest() error {
 	}
 	switch line[0] {
 	case 'g':
-		key := line[4:] // get
+		key := string(line[4:]) // get
 		getter, ok := c.server.Handler.(Getter)
 		if !ok {
 			return Error
@@ -144,7 +144,7 @@ func (c *conn) handleRequest() error {
 			c.end(StatusEnd)
 		}
 	case 'd':
-		key := line[7:] // delete
+		key := string(line[7:]) // delete
 		deleter, ok := c.server.Handler.(Deleter)
 		if !ok {
 			return Error
@@ -179,8 +179,7 @@ func ListenAndServe(addr string) error {
 
 func parseStorageLine(line []byte, item *Item) {
 	pieces := bytes.Fields(line[4:])  // Skip the actual "set "
-	item.Key = make([]byte, len(pieces[0]))
-	copy(item.Key, pieces[0])
+	item.Key = string(pieces[0])
 
 	// lol, no error handling here
 	item.Flags, _ = strconv.Atoi(string(pieces[1]))
