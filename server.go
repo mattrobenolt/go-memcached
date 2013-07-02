@@ -81,7 +81,7 @@ func (c *conn) serve() {
 }
 
 func (c *conn) end(s string) {
-	io.WriteString(c.rwc, s)
+	c.rwc.WriteString(s)
 	c.rwc.Write(crlf)
 	c.rwc.Flush()
 }
@@ -105,7 +105,7 @@ func (c *conn) handleRequest() error {
 			c.end(StatusEnd)
 		} else {
 			c.server.Stats["get_hits"].(*CounterStat).Increment(1)
-			fmt.Fprintf(c.rwc, StatusValue, item.Key, item.Flags, item.Length)
+			fmt.Fprintf(c.rwc, StatusValue, item.Key, item.Flags, len(item.Value))
 			c.rwc.Write(crlf)
 			c.rwc.Write(item.Value)
 			c.rwc.Write(crlf)
@@ -186,7 +186,6 @@ func parseStorageLine(line []byte, item *Item) {
 	item.Flags, _ = strconv.Atoi(string(pieces[1]))
 	exptime, _ := strconv.ParseInt(string(pieces[2]), 10, 64)
 	item.SetExpires(exptime)
-	item.Length, _ = strconv.Atoi(string(pieces[3]))
 }
 
 func NewServer(listen string, handler RequestHandler) *Server {

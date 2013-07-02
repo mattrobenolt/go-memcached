@@ -1,12 +1,15 @@
 package memcached
 
-import "time"
+import (
+	"time"
+	"fmt"
+)
 
 const MAX_EXPTIME = 60*60*24*30  // 30 days
 
 type Item struct {
 	Key, Value []byte
-	Length, Flags, Ttl int
+	Flags, Ttl int
 	Expires time.Time
 }
 
@@ -24,7 +27,10 @@ func (i *Item) SetExpires(exptime int64) {
 	}
 }
 
-func (i *Item) SetValue(value []byte) {
-	i.Value = value
-	i.Length = len(value)
+func (i *Item) String() string {
+	return fmt.Sprintf("<Item %s Flags:%d Length:%d Ttl:%d Expires:%s>", i.Key, i.Flags, len(i.Value), i.Ttl, i.Expires)
+}
+
+func NewItem() *Item {
+	return &Item{}
 }
