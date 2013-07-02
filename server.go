@@ -132,7 +132,7 @@ func (c *conn) handleRequest() error {
 			c.server.Stats["cmd_set"].(*CounterStat).Increment(1)
 			err = setter.Set(item)
 			if err != nil {
-				c.end(err)
+				c.end(err.Error())
 			} else {
 				c.end(StatusStored)
 			}
