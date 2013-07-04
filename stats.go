@@ -20,11 +20,15 @@ func (s *StaticStat) String() string {
 }
 
 type TimerStat struct {
-	Value int64
+	Start int64
 }
 
 func (t *TimerStat) String() string {
-	return strconv.Itoa(int(time.Now().Unix() - t.Value))
+	return strconv.Itoa(int(time.Now().Unix() - t.Start))
+}
+
+func NewTimerStat() *TimerStat {
+	return &TimerStat{time.Now().Unix()}
 }
 
 type FuncStat struct {
@@ -72,7 +76,7 @@ func NewCounterStat() *CounterStat {
 func NewStats() Stats {
 	s := make(Stats)
 	s["pid"] = &StaticStat{strconv.Itoa(os.Getpid())}
-	s["uptime"] = &TimerStat{time.Now().Unix()}
+	s["uptime"] = NewTimerStat()
 	s["time"] = &FuncStat{func() string { return strconv.Itoa(int(time.Now().Unix())) }}
 	s["version"] = &StaticStat{VERSION}
 	s["golang"] = &StaticStat{runtime.Version()}
