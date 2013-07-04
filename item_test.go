@@ -23,7 +23,7 @@ func TestIsExpiredFuture(t *testing.T) {
 	}
 }
 
-func TestIsExiredPast(t *testing.T) {
+func TestIsExpiredPast(t *testing.T) {
 	item := &Item{
 		Expires: time.Now().Add(-TEN_SECONDS),
 	}
