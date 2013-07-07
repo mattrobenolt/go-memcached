@@ -5,16 +5,12 @@ import (
 	memcached "github.com/mattrobenolt/go-memcached"
 )
 
-type Store map[string] *memcached.Item
+type Cache map[string] *memcached.Item
 
-type Memcached struct {
-	store Store
-}
-
-func (m *Memcached) Get(key string) (item *memcached.Item, err error) {
-	if item, ok := m.store[key]; ok {
+func (c Cache) Get(key string) (item *memcached.Item, err error) {
+	if item, ok := c[key]; ok {
 		if item.IsExpired() {
-			m.delete(key)
+			delete(c, key)
 		} else {
 			return item, nil
 		}
@@ -22,24 +18,17 @@ func (m *Memcached) Get(key string) (item *memcached.Item, err error) {
 	return nil, memcached.NotFound
 }
 
-func (m *Memcached) Set(item *memcached.Item) error {
-	m.store[item.Key] = item
+func (c Cache) Set(item *memcached.Item) error {
+	c[item.Key] = item
 	return nil
 }
 
-func (m *Memcached) Delete(key string) error {
-	m.delete(key)
+func (c Cache) Delete(key string) error {
+	delete(c, key)
 	return nil
-}
-
-func (m *Memcached) delete(key string) {
-	delete(m.store, key)
 }
 
 func main() {
-	cache := &Memcached{
-		store: make(Store),
-	}
-	server := memcached.NewServer(":11211", cache)
+	server := memcached.NewServer(":11211", make(Cache))
 	log.Fatal(server.ListenAndServe())
 }
