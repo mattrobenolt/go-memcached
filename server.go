@@ -91,6 +91,9 @@ func (c *conn) handleRequest() error {
 	if err != nil || len(line) == 0 {
 		return io.EOF
 	}
+	if len(line) < 5 {
+		return Error
+	}
 	switch line[0] {
 	case 'g':
 		key := string(line[4:]) // get
@@ -114,6 +117,9 @@ func (c *conn) handleRequest() error {
 	case 's':
 		switch line[1] {
 		case 'e':
+			if len(line) < 11 {
+				return Error
+			}
 			setter, ok := c.server.Handler.(Setter)
 			if !ok {
 				return Error
@@ -137,13 +143,21 @@ func (c *conn) handleRequest() error {
 				c.end(StatusStored)
 			}
 		case 't':
+			if len(line) != 5 {
+				return Error
+			}
 			for key, value := range c.server.Stats {
 				fmt.Fprintf(c.rwc, StatusStat, key, value)
 				c.rwc.Write(crlf)
 			}
 			c.end(StatusEnd)
+		default:
+			return Error
 		}
 	case 'd':
+		if len(line) < 8 {
+			return Error
+		}
 		key := string(line[7:]) // delete
 		deleter, ok := c.server.Handler.(Deleter)
 		if !ok {
