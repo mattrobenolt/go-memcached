@@ -1,11 +1,18 @@
 package main
 
 import (
-	"log"
+	"flag"
+	"fmt"
 	memcached "github.com/mattrobenolt/go-memcached"
+	"log"
 )
 
-type Cache map[string] *memcached.Item
+var (
+	listen = flag.String("l", "", "Interface to listen on. Default to all addresses.")
+	port   = flag.Int("p", 11211, "TCP port number to listen on (default: 11211)")
+)
+
+type Cache map[string]*memcached.Item
 
 func (c Cache) Get(key string) (item *memcached.Item, err error) {
 	if item, ok := c[key]; ok {
@@ -29,6 +36,8 @@ func (c Cache) Delete(key string) error {
 }
 
 func main() {
-	server := memcached.NewServer(":11211", make(Cache))
+	flag.Parse()
+	address := fmt.Sprintf("%s:%d", *listen, *port)
+	server := memcached.NewServer(address, make(Cache))
 	log.Fatal(server.ListenAndServe())
 }
