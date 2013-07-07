@@ -12,7 +12,8 @@ import (
 const VERSION = "0.0.0"
 
 var (
-	crlf = []byte("\r\n")
+	crlf    = []byte("\r\n")
+	noreply = []byte("noreply")
 )
 
 type conn struct {
@@ -125,7 +126,7 @@ func (c *conn) handleRequest() error {
 				return Error
 			}
 			item := &Item{}
-			parseStorageLine(line, item)
+			pieces := parseStorageLine(line, item)
 			value, err := c.ReadLine()
 			if err != nil {
 				return ClientError
@@ -136,11 +137,15 @@ func (c *conn) handleRequest() error {
 			copy(item.Value, value)
 
 			c.server.Stats["cmd_set"].(*CounterStat).Increment(1)
-			err = setter.Set(item)
-			if err != nil {
-				c.end(err.Error())
+			if len(pieces) == 5 && bytes.Equal(pieces[4], noreply) {
+				go setter.Set(item)
 			} else {
-				c.end(StatusStored)
+				err = setter.Set(item)
+				if err != nil {
+					c.end(err.Error())
+				} else {
+					c.end(StatusStored)
+				}
 			}
 		case 't':
 			if len(line) != 5 {
@@ -191,7 +196,7 @@ func ListenAndServe(addr string) error {
 	return s.ListenAndServe()
 }
 
-func parseStorageLine(line []byte, item *Item) {
+func parseStorageLine(line []byte, item *Item) [][]byte {
 	pieces := bytes.Fields(line[4:])  // Skip the actual "set "
 	item.Key = string(pieces[0])
 
@@ -199,6 +204,7 @@ func parseStorageLine(line []byte, item *Item) {
 	item.Flags, _ = strconv.Atoi(string(pieces[1]))
 	exptime, _ := strconv.ParseInt(string(pieces[2]), 10, 64)
 	item.SetExpires(exptime)
+	return pieces
 }
 
 func NewServer(listen string, handler RequestHandler) *Server {
