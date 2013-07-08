@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-const TEN_SECONDS = time.Duration(10)*time.Second
+const TEN_SECONDS = time.Duration(10) * time.Second
 
 func TestIsExpiredZero(t *testing.T) {
 	item := &Item{}
@@ -62,12 +62,12 @@ func TestSetExpiresTypical(t *testing.T) {
 
 func TestSetExpiresMaxExptime(t *testing.T) {
 	item := &Item{}
-	expires := time.Unix(int64(60*60*24*30) + 1, 0)  // 1 second greater than 30 days
+	expires := time.Unix(int64(60*60*24*30)+1, 0) // 1 second greater than 30 days
 	item.SetExpires(expires.Unix())
 	if !item.Expires.Equal(expires) {
 		t.Error("Expires should be 1970-01-30:", item.Expires)
 	}
-	if item.Ttl > -1370325162 {  // well, will always be smaller than this known point in time since it's based on Now()
+	if item.Ttl > -1370325162 { // well, will always be smaller than this known point in time since it's based on Now()
 		t.Error("Ttl should be really really really low:", item.Ttl)
 	}
 }

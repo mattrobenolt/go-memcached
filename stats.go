@@ -2,14 +2,13 @@ package memcached
 
 import (
 	"fmt"
-	"runtime"
 	"os"
+	"runtime"
 	"strconv"
 	"time"
 )
 
-type Stats map[string] fmt.Stringer
-
+type Stats map[string]fmt.Stringer
 
 type StaticStat struct {
 	Value string
@@ -40,7 +39,7 @@ func (f *FuncStat) String() string {
 }
 
 type CounterStat struct {
-	Count int
+	Count        int
 	calculations chan int
 }
 

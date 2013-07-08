@@ -1,20 +1,20 @@
 package memcached
 
 import (
-	"time"
 	"fmt"
+	"time"
 )
 
 // The maximum time to send from a client before
 // the timestamp is considered an absolute unix
 // timestamp.
-const MAX_EXPTIME = 60*60*24*30  // 30 days
+const MAX_EXPTIME = 60 * 60 * 24 * 30 // 30 days
 
 type Item struct {
-	Key string
-	Value []byte
+	Key        string
+	Value      []byte
 	Flags, Ttl int
-	Expires time.Time
+	Expires    time.Time
 }
 
 // Check if an Item is expired based on it's Ttl.
@@ -34,7 +34,7 @@ func (i *Item) SetExpires(exptime int64) {
 		i.Ttl = int(i.Expires.Sub(time.Now()).Seconds())
 	} else if exptime > 0 {
 		i.Ttl = int(exptime)
-		i.Expires = time.Now().Add(time.Duration(exptime)*time.Second)
+		i.Expires = time.Now().Add(time.Duration(exptime) * time.Second)
 	}
 }
 

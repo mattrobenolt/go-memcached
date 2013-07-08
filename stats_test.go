@@ -44,7 +44,7 @@ func TestCounterStat(t *testing.T) {
 
 func TestTimerStat(t *testing.T) {
 	stat := NewTimerStat()
-	time.Sleep(time.Duration(1)*time.Second)
+	time.Sleep(time.Duration(1) * time.Second)
 	if stat.String() != "1" {
 		t.Error("Should be '1'", stat.String())
 	}

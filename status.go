@@ -3,20 +3,20 @@ package memcached
 import "errors"
 
 const (
-	StatusEnd = "END"
-	StatusError = "ERROR"
+	StatusEnd         = "END"
+	StatusError       = "ERROR"
 	StatusServerError = "SERVER_ERROR"
 	StatusClientError = "CLIENT_ERROR %s"
-	StatusStored = "STORED"
-	StatusNotStored = "NOT_STORED"
-	StatusExists = "EXISTS"
-	StatusNotFound = "NOT_FOUND"
-	StatusDeleted = "DELETED"
-	StatusTouched = "TOUCHED"
-	StatusOK = "OK"
-	StatusVersion = "VERSION %s"
-	StatusValue = "VALUE %s %d %d"
-	StatusStat = "STAT %s %s"
+	StatusStored      = "STORED"
+	StatusNotStored   = "NOT_STORED"
+	StatusExists      = "EXISTS"
+	StatusNotFound    = "NOT_FOUND"
+	StatusDeleted     = "DELETED"
+	StatusTouched     = "TOUCHED"
+	StatusOK          = "OK"
+	StatusVersion     = "VERSION %s"
+	StatusValue       = "VALUE %s %d %d"
+	StatusStat        = "STAT %s %s"
 )
 
 var (

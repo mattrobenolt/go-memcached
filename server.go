@@ -3,12 +3,12 @@
 package memcached
 
 import (
-	"net"
-	"io"
 	"bufio"
 	"bytes"
-	"strconv"
 	"fmt"
+	"io"
+	"net"
+	"strconv"
 )
 
 const VERSION = "0.0.0"
@@ -20,14 +20,14 @@ var (
 
 type conn struct {
 	server *Server
-	conn net.Conn
-	rwc *bufio.ReadWriter
+	conn   net.Conn
+	rwc    *bufio.ReadWriter
 }
 
 type Server struct {
-	Addr string
+	Addr    string
 	Handler RequestHandler
-	Stats Stats
+	Stats   Stats
 }
 
 func (s *Server) newConn(rwc net.Conn) (c *conn, err error) {
@@ -200,7 +200,7 @@ func ListenAndServe(addr string) error {
 }
 
 func parseStorageLine(line []byte, item *Item) [][]byte {
-	pieces := bytes.Fields(line[4:])  // Skip the actual "set "
+	pieces := bytes.Fields(line[4:]) // Skip the actual "set "
 	item.Key = string(pieces[0])
 
 	// lol, no error handling here
