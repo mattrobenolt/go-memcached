@@ -20,8 +20,12 @@ const (
 )
 
 var (
+	// An error caused by an invalid command from the client
 	ClientError = errors.New(StatusClientError)
+	// The key was not found
 	NotFound = errors.New(StatusNotFound)
+	// An error occured servicing this request
 	ServerError = errors.New(StatusServerError)
+	// Generic error
 	Error = errors.New(StatusError)
 )

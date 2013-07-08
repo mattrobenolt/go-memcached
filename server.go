@@ -1,3 +1,5 @@
+// Package memcached provides an interface for building your
+// own memcached ascii protocol servers.
 package memcached
 
 import (
@@ -36,6 +38,7 @@ func (s *Server) newConn(rwc net.Conn) (c *conn, err error) {
 	return c, nil
 }
 
+// Start listening and accepting requests to this server.
 func (s *Server) ListenAndServe() error {
 	addr := s.Addr
 	if addr == "" {
@@ -207,6 +210,7 @@ func parseStorageLine(line []byte, item *Item) [][]byte {
 	return pieces
 }
 
+// Initialize a new memcached Server
 func NewServer(listen string, handler RequestHandler) *Server {
 	return &Server{listen, handler, NewStats()}
 }
