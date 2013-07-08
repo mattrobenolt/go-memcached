@@ -58,4 +58,4 @@ func main() {
  * [Simple Memcached](examples/memcached.go)  *Don't actually use this*
 
 ## Documentation
- * Coming soon
+ * [http://godoc.org/github.com/mattrobenolt/go-memcached](http://godoc.org/github.com/mattrobenolt/go-memcached)
