@@ -5,6 +5,7 @@ import (
 	"os"
 	"runtime"
 	"strconv"
+	"syscall"
 	"time"
 )
 
@@ -72,6 +73,26 @@ func NewCounterStat() *CounterStat {
 	return c
 }
 
+type usageType int
+
+const (
+	USER_TIME usageType = iota
+	SYSTEM_TIME
+)
+
+func getRusage(usage usageType) float64 {
+	rusage := &syscall.Rusage{}
+	syscall.Getrusage(0, rusage)
+	var time *syscall.Timeval
+	if usage == USER_TIME {
+		time = &rusage.Utime
+	} else {
+		time = &rusage.Stime
+	}
+	nsec := time.Nano()
+	return float64(nsec) / 1000000000
+}
+
 func NewStats() Stats {
 	s := make(Stats)
 	s["pid"] = &StaticStat{strconv.Itoa(os.Getpid())}
@@ -80,6 +101,8 @@ func NewStats() Stats {
 	s["version"] = &StaticStat{VERSION}
 	s["golang"] = &StaticStat{runtime.Version()}
 	s["goroutines"] = &FuncStat{func() string { return strconv.Itoa(runtime.NumGoroutine()) }}
+	s["rusage_user"] = &FuncStat{func() string { return fmt.Sprintf("%f", getRusage(USER_TIME)) }}
+	s["rusage_system"] = &FuncStat{func() string { return fmt.Sprintf("%f", getRusage(SYSTEM_TIME)) }}
 	s["cmd_get"] = NewCounterStat()
 	s["cmd_set"] = NewCounterStat()
 	s["get_hits"] = NewCounterStat()
