@@ -30,6 +30,14 @@ type Server struct {
 	Stats   Stats
 }
 
+type StorageCmd struct {
+	Key string
+	Flags int
+	Exptime int64
+	Length int
+	Noreply bool
+}
+
 func (s *Server) newConn(rwc net.Conn) (c *conn, err error) {
 	c = new(conn)
 	c.server = s
@@ -129,18 +137,33 @@ func (c *conn) handleRequest() error {
 				return Error
 			}
 			item := &Item{}
-			pieces := parseStorageLine(line, item)
-			value, err := c.ReadLine()
+			cmd := parseStorageLine(line)
+			item.Key = cmd.Key
+			item.Flags = cmd.Flags
+			item.SetExpires(cmd.Exptime)
+
+			value := make([]byte, cmd.Length+2)
+			n, err := c.Read(value)
 			if err != nil {
 				return ClientError
 			}
 
+			// Didn't provide the correct number of bytes
+			if n != cmd.Length+2 {
+				return ClientError
+			}
+
+			// Doesn't end with \r\n
+			if !bytes.HasSuffix(value, crlf) {
+				return ClientError
+			}
+
 			// Copy the value into the *Item
-			item.Value = make([]byte, len(value))
+			item.Value = make([]byte, len(value)-2)
 			copy(item.Value, value)
 
 			c.server.Stats["cmd_set"].(*CounterStat).Increment(1)
-			if len(pieces) == 5 && bytes.Equal(pieces[4], noreply) {
+			if cmd.Noreply {
 				go setter.Set(item)
 			} else {
 				err = setter.Set(item)
@@ -192,6 +215,10 @@ func (c *conn) ReadLine() (line []byte, err error) {
 	return
 }
 
+func (c *conn) Read(p []byte) (n int, err error) {
+	return c.rwc.Read(p)
+}
+
 func ListenAndServe(addr string) error {
 	s := &Server{
 		Addr: addr,
@@ -199,15 +226,16 @@ func ListenAndServe(addr string) error {
 	return s.ListenAndServe()
 }
 
-func parseStorageLine(line []byte, item *Item) [][]byte {
+func parseStorageLine(line []byte) *StorageCmd {
 	pieces := bytes.Fields(line[4:]) // Skip the actual "set "
-	item.Key = string(pieces[0])
-
+	cmd := &StorageCmd{}
 	// lol, no error handling here
-	item.Flags, _ = strconv.Atoi(string(pieces[1]))
-	exptime, _ := strconv.ParseInt(string(pieces[2]), 10, 64)
-	item.SetExpires(exptime)
-	return pieces
+	cmd.Key = string(pieces[0])
+	cmd.Flags, _ = strconv.Atoi(string(pieces[1]))
+	cmd.Exptime, _ = strconv.ParseInt(string(pieces[2]), 10, 64)
+	cmd.Length, _ = strconv.Atoi(string(pieces[3]))
+	cmd.Noreply = len(pieces) == 5 && bytes.Equal(pieces[4], noreply)
+	return cmd
 }
 
 // Initialize a new memcached Server
