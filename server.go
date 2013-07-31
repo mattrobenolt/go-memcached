@@ -216,7 +216,7 @@ func (c *conn) ReadLine() (line []byte, err error) {
 }
 
 func (c *conn) Read(p []byte) (n int, err error) {
-	return c.rwc.Read(p)
+	return io.ReadFull(c.rwc, p)
 }
 
 func ListenAndServe(addr string) error {
