@@ -103,8 +103,8 @@ func (c *conn) handleRequest() error {
 	if err != nil || len(line) == 0 {
 		return io.EOF
 	}
-	if len(line) < 5 {
-		return Error
+	if len(line) < 4 {
+		return ClientError
 	}
 	switch line[0] {
 	case 'g':
@@ -200,6 +200,11 @@ func (c *conn) handleRequest() error {
 		} else {
 			c.end(StatusDeleted)
 		}
+	case 'q':
+		if len(line) == 4 {
+			return io.EOF
+		}
+		return ClientError
 	default:
 		return Error
 	}
