@@ -6,19 +6,19 @@ type RequestHandler interface{}
 // "get" command.
 type Getter interface {
 	RequestHandler
-	Get(string) (*Item, error)
+	Get(string) MemcachedResponse
 }
 
 // A Setter is an object who response to a simple
 // "set" command.
 type Setter interface {
 	RequestHandler
-	Set(*Item) error
+	Set(*Item) MemcachedResponse
 }
 
 // A Delter is an object who responds to a simple
 // "delete" command.
 type Deleter interface {
 	RequestHandler
-	Delete(string) error
+	Delete(string) MemcachedResponse
 }

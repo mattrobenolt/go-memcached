@@ -87,14 +87,13 @@ func (c *conn) serve() {
 			if err == io.EOF {
 				return
 			}
-			c.end(err.Error())
+			c.rwc.WriteString(err.Error())
+			c.end()
 		}
 	}
 }
 
-func (c *conn) end(s string) {
-	c.rwc.WriteString(s)
-	c.rwc.Write(crlf)
+func (c *conn) end() {
 	c.rwc.Flush()
 }
 
@@ -104,7 +103,7 @@ func (c *conn) handleRequest() error {
 		return io.EOF
 	}
 	if len(line) < 4 {
-		return ClientError
+		return Error
 	}
 	switch line[0] {
 	case 'g':
@@ -114,18 +113,15 @@ func (c *conn) handleRequest() error {
 			return Error
 		}
 		c.server.Stats["cmd_get"].(*CounterStat).Increment(1)
-		item, err := getter.Get(key)
-		if err != nil {
-			c.server.Stats["get_misses"].(*CounterStat).Increment(1)
-			c.end(StatusEnd)
-		} else {
+		response := getter.Get(key)
+		if response != nil {
 			c.server.Stats["get_hits"].(*CounterStat).Increment(1)
-			fmt.Fprintf(c.rwc, StatusValue, item.Key, item.Flags, len(item.Value))
-			c.rwc.Write(crlf)
-			c.rwc.Write(item.Value)
-			c.rwc.Write(crlf)
-			c.end(StatusEnd)
+			response.WriteResponse(c.rwc)
+		} else {
+			c.server.Stats["get_misses"].(*CounterStat).Increment(1)
 		}
+		c.rwc.WriteString(StatusEnd)
+		c.end()
 	case 's':
 		switch line[1] {
 		case 'e':
@@ -145,17 +141,23 @@ func (c *conn) handleRequest() error {
 			value := make([]byte, cmd.Length+2)
 			n, err := c.Read(value)
 			if err != nil {
-				return ClientError
+				return Error
 			}
 
 			// Didn't provide the correct number of bytes
 			if n != cmd.Length+2 {
-				return ClientError
+				response := &ClientErrorResponse{"bad chunk data"}
+				response.WriteResponse(c.rwc)
+				c.ReadLine() // Read out the rest of the line
+				return Error
 			}
 
 			// Doesn't end with \r\n
 			if !bytes.HasSuffix(value, crlf) {
-				return ClientError
+				response := &ClientErrorResponse{"bad chunk data"}
+				response.WriteResponse(c.rwc)
+				c.ReadLine() // Read out the rest of the line
+				return Error
 			}
 
 			// Copy the value into the *Item
@@ -166,11 +168,13 @@ func (c *conn) handleRequest() error {
 			if cmd.Noreply {
 				go setter.Set(item)
 			} else {
-				err = setter.Set(item)
-				if err != nil {
-					c.end(err.Error())
+				response := setter.Set(item)
+				if response != nil {
+					response.WriteResponse(c.rwc)
+					c.end()
 				} else {
-					c.end(StatusStored)
+					c.rwc.WriteString(StatusStored)
+					c.end()
 				}
 			}
 		case 't':
@@ -179,9 +183,9 @@ func (c *conn) handleRequest() error {
 			}
 			for key, value := range c.server.Stats {
 				fmt.Fprintf(c.rwc, StatusStat, key, value)
-				c.rwc.Write(crlf)
 			}
-			c.end(StatusEnd)
+			c.rwc.WriteString(StatusEnd)
+			c.end()
 		default:
 			return Error
 		}
@@ -196,15 +200,17 @@ func (c *conn) handleRequest() error {
 		}
 		err := deleter.Delete(key)
 		if err != nil {
-			c.end(StatusNotFound)
+			c.rwc.WriteString(StatusNotFound)
+			c.end()
 		} else {
-			c.end(StatusDeleted)
+			c.rwc.WriteString(StatusDeleted)
+			c.end()
 		}
 	case 'q':
 		if len(line) == 4 {
 			return io.EOF
 		}
-		return ClientError
+		return Error
 	default:
 		return Error
 	}

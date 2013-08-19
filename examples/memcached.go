@@ -16,23 +16,23 @@ var (
 
 type Cache map[string]*memcached.Item
 
-func (c Cache) Get(key string) (item *memcached.Item, err error) {
+func (c Cache) Get(key string) memcached.MemcachedResponse {
 	if item, ok := c[key]; ok {
 		if item.IsExpired() {
 			delete(c, key)
 		} else {
-			return item, nil
+			return &memcached.ItemResponse{item}
 		}
 	}
-	return nil, memcached.NotFound
+	return nil
 }
 
-func (c Cache) Set(item *memcached.Item) error {
+func (c Cache) Set(item *memcached.Item) memcached.MemcachedResponse {
 	c[item.Key] = item
 	return nil
 }
 
-func (c Cache) Delete(key string) error {
+func (c Cache) Delete(key string) memcached.MemcachedResponse {
 	delete(c, key)
 	return nil
 }
