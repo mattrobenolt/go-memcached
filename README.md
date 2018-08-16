@@ -35,21 +35,14 @@ import (
 	memcached "github.com/mattrobenolt/go-memcached"
 )
 
-type Cache struct {}
+type Cache map[string]*memcached.Item
 
-func (c *Cache) Get(key string) (item *memcached.Item, err error) {
-	if key == "hello" {
-		item = &memcached.Item{
-			Key: key,
-			Value: []byte("world"),
-		}
-		return item, nil
-	}
-	return nil, memcached.NotFound
+func (c Cache) Get(key string) memcached.MemcachedResponse {
+	return &memcached.ItemResponse{&memcached.Item{Key: key, Value: []byte("world")}}
 }
 
 func main() {
-	server := memcached.NewServer(":11211", &Cache{})
+	server := memcached.NewServer(":11211", make(Cache))
 	server.ListenAndServe()
 }
 ```
