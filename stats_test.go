@@ -19,20 +19,29 @@ func TestFuncStat(t *testing.T) {
 	}
 }
 
+func WaitFor(stat *CounterStat,value string){
+	for end := time.Now().Add(time.Second); stat.String() != value ; {
+		if time.Now().After(end) {
+			break
+		}
+		time.Sleep(1)
+	}
+}
+
 func TestCounterStat(t *testing.T) {
 	stat := NewCounterStat()
 	var i int
 	for i = 0; i < 10; i++ {
 		stat.Increment(1)
 	}
-	time.Sleep(1) // Force the intenal goroutine to catch up with the counts
+	WaitFor(stat,"10") // Force the intenal goroutine to catch up with the counts
 	if stat.String() != "10" {
 		t.Error("Should be '10'", stat.String())
 	}
 	for i = 0; i < 10; i++ {
 		stat.Decrement(1)
 	}
-	time.Sleep(1)
+	WaitFor(stat,"0")
 	if stat.String() != "0" {
 		t.Error("Should be '0'", stat.String())
 	}
